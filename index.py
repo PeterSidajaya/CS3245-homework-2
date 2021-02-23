@@ -5,10 +5,14 @@ import sys
 import getopt
 import os
 import pickle
+import math
+from config import make_pointer
 
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
+    
 
+# main function
 def build_index(in_dir, out_dict, out_postings):
     """
     build index from documents stored in the input directory,
@@ -19,16 +23,18 @@ def build_index(in_dir, out_dict, out_postings):
     word_list = []
     stemmer = nltk.stem.PorterStemmer()
     filename_list = []
-    dictionary_file = open('dictionary.txt', 'wb')
-    posting_file = open('postings.txt', 'wb')
+    dictionary_file = open('dictionary.pkl', 'wb')
+    posting_file = open('postings.pkl', 'wb')
 
     if (in_dir[-1] != '/'):
         print('missed a trailing slash!')
         in_dir += '/'
+
     for filename in os.listdir(in_dir):
         filename_list.append(int(filename))
         document = open(in_dir + filename, 'r', encoding="utf8")
-        word_list = word_list + list(map(lambda x: (stemmer.stem(x), int(filename)), nltk.tokenize.word_tokenize(document.read())))
+        tmp = list(map(lambda x: (stemmer.stem(x), int(filename)), nltk.tokenize.word_tokenize(document.read())))
+        word_list = word_list + tmp
         document.close()
     
     word_list.sort()     # sort by word, then by posting
@@ -37,27 +43,42 @@ def build_index(in_dir, out_dict, out_postings):
     current_list = []
     count = 0
 
+    # DELETE ME
     for word, post in word_list:
         if word != current_word:
             # saves the pointer and saves the posting list to the disk
             pointer = posting_file.tell()
-            pickle.dump(current_list, posting_file)
+            
+            if (not dictionary and not current_list):
+                current_word = word
+                current_list = [post,]
+                count = 1
+                continue
+
+            print("CURR", list(set(current_list)), "WORD", current_word, "COUNT", count, "pointer", pointer)
+            pickle.dump(make_pointer(list(set(current_list))), posting_file)
             dictionary[current_word] = (count, pointer)
 
             current_word = word
             current_list = [post,]
             count = 1
         else:
-            if post != current_list[-1]:
+            print("==> curr word:", word, ", list:", current_list, ", post:", post)
+            if len(current_list) != 0 and post != current_list[-1]:
                 current_list.append(post)
                 count += 1
+            else:
+                current_list.append(post)
+                count = 1
+
     # for the last word
     pointer = posting_file.tell()
-    pickle.dump(current_list, posting_file)
+    print("CURR", list(set(current_list)), "WORD", current_word, "COUNT", count, "pointer", pointer)
+    pickle.dump(make_pointer(list(set(current_list))), posting_file)
     dictionary[current_word] = (count, pointer)
 
     # add an additional entry for the full posting
-    dictionary['ALL POSTING'] = filename_list
+    dictionary['ALL POSTING'] = sorted(filename_list)
     pickle.dump(dictionary, dictionary_file)
     posting_file.close()
     dictionary_file.close()

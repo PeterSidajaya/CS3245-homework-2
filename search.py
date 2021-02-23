@@ -5,7 +5,7 @@ import nltk
 import sys
 import getopt
 import pickle
-from query import *
+from query import search
 
 def usage():
     print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
@@ -21,12 +21,11 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     infile.close()
     
     in_file = open(queries_file, 'r', encoding="utf8")
-    out_file = open(results_file, 'a', encoding="utf8")
-    out_file.truncate(0)
+    out_file = open(results_file, 'w', encoding="utf8")
     query_list = in_file.read().splitlines()
     while query_list:
         query = query_list.pop(0)
-        out_file.write(search(query, new_dict))
+        out_file.write(search(query, new_dict, postings_file))
         if query_list:
             out_file.write('\n')
     in_file.close()
