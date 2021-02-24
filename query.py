@@ -75,6 +75,6 @@ def search(query, dict):
             eval_stack.append(list(set(operand_1).union(operand_2)))
     if len(eval_stack[0]) != 0:
         eval_stack[0].sort()        # since we are using sets, must sort
-        return functools.reduce(lambda x, y: str(x) + ' ' + str(y), eval_stack[0], '')
+        return functools.reduce(lambda x, y: str(x) + ' ' + str(y), eval_stack[0], '')[1:]
     else:
         return ''

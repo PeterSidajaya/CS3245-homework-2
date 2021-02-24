@@ -1,4 +1,5 @@
 import pickle
+import os
 
 def invert(word_list, dictionary_file, posting_file):
     dictionary = {}
@@ -63,6 +64,10 @@ def merge_files(dictionary_file_1_address, posting_file_1_address, dictionary_fi
             dictionary[word] = (len(posting_list), pointer)
     
     pickle.dump(dictionary, dictionary_file)
+    os.remove(dictionary_file_1_address)
+    os.remove(dictionary_file_2_address)
+    os.remove(posting_file_1_address)
+    os.remove(posting_file_2_address)
 
 def merge_lists(list_1, list_2):
     i = 0

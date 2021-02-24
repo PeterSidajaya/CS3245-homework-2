@@ -52,7 +52,7 @@ def build_index(in_dir, out_dict, out_postings):
 
     print('FINISHED INVERTING')
     
-    # merge?
+    # merging process, binary merging
     for i in range(math.ceil(math.log(num_of_blocks, 2))): 
         print('Generation ' + str(i))
         k = 0
@@ -66,6 +66,8 @@ def build_index(in_dir, out_dict, out_postings):
                 print('Copying block ' + str(j))
                 shutil.copyfile('temp_dictionary_' + str(i) + '_' + str(j) + '.txt', 'temp_dictionary_' + str(i+1) + '_' + str(k) + '.txt')
                 shutil.copyfile('temp_posting_' + str(i) + '_' + str(j) + '.txt', 'temp_posting_' + str(i+1) + '_' + str(k) + '.txt')
+                os.remove('temp_dictionary_' + str(i) + '_' + str(j) + '.txt')
+                os.remove('temp_posting_' + str(i) + '_' + str(j) + '.txt')            
             k += 1
         num_of_blocks = k
 
@@ -77,6 +79,8 @@ def build_index(in_dir, out_dict, out_postings):
     pickle.dump(dictionary, final_dictionary_file)
     temp_dictionary_file.close()
     final_dictionary_file.close()
+    os.remove('temp_posting_' + str(i+1) + '_' + str(k-1) + '.txt')
+    os.remove('temp_dictionary_' + str(i+1) + '_' + str(k-1) + '.txt')
 
 
 
