@@ -12,7 +12,9 @@ from config import make_pointer
 
 def usage():
     print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
+    
 
+# main function
 def build_index(in_dir, out_dict, out_postings):
     """
     build index from documents stored in the input directory,
@@ -27,6 +29,7 @@ def build_index(in_dir, out_dict, out_postings):
     if (in_dir[-1] != '/'):
         print('missed a trailing slash!')
         in_dir += '/'
+
     for filename in os.listdir(in_dir):
         filename_list.append(int(filename))
     
@@ -71,6 +74,7 @@ def build_index(in_dir, out_dict, out_postings):
                 os.remove('temp_posting_' + str(i) + '_' + str(j) + '.txt')            
             k += 1
         num_of_blocks = k
+
 
     shutil.copyfile('temp_posting_' + str(i+1) + '_' + str(k-1) + '.txt', 'posting_no_skip_pointer.txt')
     temp_dictionary_file = open('temp_dictionary_' + str(i+1) + '_' + str(k-1) + '.txt', 'rb')
