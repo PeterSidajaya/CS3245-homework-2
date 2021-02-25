@@ -89,6 +89,12 @@ def get_intersection(left, right):
 
             right_pointer += 1
 
+    print("LEFT")
+    print(left)
+    print("RIGHT")
+    print(right)
+    print("RESULT")
+    print(result)
     return result
 
 
