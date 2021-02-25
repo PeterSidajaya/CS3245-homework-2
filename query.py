@@ -1,4 +1,5 @@
 from collections import deque
+from spimi import merge_lists
 from config import make_pointer
 import nltk
 import functools
@@ -6,6 +7,14 @@ import pickle
 import math
 
 def query_shunting(query):
+    """process the query using the shunting-yard algorithm
+
+    Args:
+        query (string): the query to be processed
+
+    Returns:
+        queue: the query queue in reverse polish notation (RPN)
+    """
     stemmer = nltk.stem.PorterStemmer()
     operators = {'AND', 'OR', 'NOT'}
     brackets = {'(', ')'}
@@ -53,6 +62,15 @@ def precedence(op1, op2):
 
 
 def get_intersection(left, right):
+    """get the intersection between two posting lists, with the help of skip pointers
+
+    Args:
+        left (list): the first list
+        right (list): the second list
+
+    Returns:
+        list: intersection of the lists
+    """
     # left/right : [(1, True, 2), (5, False, None), (8, True, 4), (9, False, None),
     #               (10, True, 6), (13, False, None), (15, False, None)]
 
@@ -88,18 +106,64 @@ def get_intersection(left, right):
                 continue
 
             right_pointer += 1
-
-    return result
+    return make_pointer(result)
 
 
 def get_union(left, right):
-    get_left_val = [i for i, j, k in left]
-    get_right_val = [i for i, j, k in right]
+    """get the union between two posting lists
 
-    return list(set(get_left_val).union(get_right_val))
-    
+    Args:
+        left (list): the first list
+        right (list): the second list
 
-def search(query, new_dict, postings_file):
+    Returns:
+        list: union of the lists
+    """
+    left_val = [i for i, j, k in left]
+    right_val = [i for i, j, k in right]
+    final_list = merge_lists(left_val, right_val)       # steal from spimi.py lol
+    return make_pointer(final_list)
+
+
+def get_complement(left, right):
+    """get the complement between two posting lists (left \ right)
+
+    Args:
+        left (list): the first list
+        right (list): the second list
+
+    Returns:
+        list: complement of the lists (left \ right)
+    """
+    left_val = [i for i, j, k in left]
+    right_val = [i for i, j, k in right]
+    i = 0
+    j = 0
+    list = []
+    while i < len(left_val) and j < len(right_val):
+        if(left_val[i] < right_val[j]):
+            list.append(left_val[i])
+            i += 1
+        elif(left_val[i] > right_val[j]):
+            j+= 1
+        elif(left_val[i] == right_val[j]):
+            i += 1
+            j += 1
+    list.extend(left_val[i:])
+    return make_pointer(list)
+
+
+def search(query, dictionary, postings_file):
+    """process the query and return the resulting posting list
+
+    Args:
+        query (queue): the query queue in reverse polish notation (RPN)
+        dictionary (dictionary): dictionary of the posting lists
+        postings_file (str): address to the posting file list
+
+    Returns:
+        str: search result
+    """
     query_queue = query_shunting(query)
     posting_file = open(postings_file, 'rb')
     operators = ['(', ')', 'NOT', 'AND', 'OR']
@@ -109,25 +173,26 @@ def search(query, new_dict, postings_file):
     while len(query_queue) != 0:
         token = query_queue.popleft()
         if token not in operators:
-            if token in new_dict:
-                pointer = new_dict[token][1]
+            if token in dictionary:
+                pointer = dictionary[token][1]
                 posting_file.seek(pointer)
                 eval_stack.append(pickle.load(posting_file))
             else:
                 eval_stack.append([])
         elif token == 'NOT':
             operand = eval_stack.pop()
-            list_diff = list(set(new_dict['ALL POSTING']).difference(operand))
-            eval_stack.append(make_pointer(list_diff))
+            list_diff = get_complement(dictionary['ALL POSTING'], operand)
+            eval_stack.append(list_diff)
         elif token == 'AND':
             operand_1 = eval_stack.pop()
             operand_2 = eval_stack.pop()
             intersect = get_intersection(operand_1, operand_2)
-            eval_stack.append(make_pointer(intersect))
+            eval_stack.append(intersect)
         elif token == 'OR':
             operand_1 = eval_stack.pop()
             operand_2 = eval_stack.pop()
-            eval_stack.append(make_pointer(get_union(operand_1, operand_2)))
+            union = get_union(operand_1, operand_2)
+            eval_stack.append(union)
 
     if len(eval_stack[0]) != 0:
         get_val = sorted([i for i, j, k in eval_stack[0]])

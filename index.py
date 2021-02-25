@@ -20,11 +20,10 @@ def build_index(in_dir, out_dict, out_postings):
     build index from documents stored in the input directory,
     then output the dictionary file and postings file
     """
-    print('indexing...')
 
     stemmer = nltk.stem.PorterStemmer()
     filename_list = []
-    block_size = 2
+    block_size = 2      # change this to set block size
 
     if (in_dir[-1] != '/'):
         print('missed a trailing slash!')
@@ -32,11 +31,11 @@ def build_index(in_dir, out_dict, out_postings):
 
     for filename in os.listdir(in_dir):
         filename_list.append(int(filename))
+    filename_list.sort()        # have to do this since filename is not sorted
     
     # invert each block
-    num_of_files = len(filename_list)
+    print('INVERTING')
     num_of_blocks = 0
-
     word_list = []
     files_in_block = 0
     for filename in filename_list:
@@ -44,12 +43,14 @@ def build_index(in_dir, out_dict, out_postings):
         word_list = word_list + list(map(lambda x: (stemmer.stem(x), int(filename)), nltk.tokenize.word_tokenize(document.read())))
         document.close()
         files_in_block += 1
+        # If the number of files scanned has reach block size, then invert first
         if files_in_block == block_size:
             print('Inverting block number ' + str(num_of_blocks + 1))
             invert(word_list, 'temp_dictionary_0_' + str(num_of_blocks) + '.txt', 'temp_posting_0_' + str(num_of_blocks) + '.txt')
             num_of_blocks += 1
             files_in_block = 0
             word_list = []
+    # invert the remaining block
     print('Inverting block number ' + str(num_of_blocks + 1))
     invert(word_list, 'temp_dictionary_0_' + str(num_of_blocks) + '.txt', 'temp_posting_0_' + str(num_of_blocks) + '.txt')
     num_of_blocks += 1
@@ -62,11 +63,13 @@ def build_index(in_dir, out_dict, out_postings):
         k = 0
         for j in range(0, num_of_blocks, 2):
             if j + 1 < num_of_blocks:
+                # do the merging process
                 print('Merging block ' + str(j) + ' and ' + str(j+1))
                 merge_files('temp_dictionary_' + str(i) + '_' + str(j) + '.txt', 'temp_posting_'+str(i) + '_'+ str(j) + '.txt',
                 'temp_dictionary_' + str(i) + '_' + str(j+1) + '.txt', 'temp_posting_'+str(i) + '_'+ str(j+1) + '.txt',
                 'temp_dictionary_' + str(i+1) + '_' + str(k) + '.txt', 'temp_posting_'+str(i+1) + '_'+ str(k) + '.txt')
             else:
+                # when the number is odd, copy the final block instead
                 print('Copying block ' + str(j))
                 shutil.copyfile('temp_dictionary_' + str(i) + '_' + str(j) + '.txt', 'temp_dictionary_' + str(i+1) + '_' + str(k) + '.txt')
                 shutil.copyfile('temp_posting_' + str(i) + '_' + str(j) + '.txt', 'temp_posting_' + str(i+1) + '_' + str(k) + '.txt')
@@ -76,31 +79,34 @@ def build_index(in_dir, out_dict, out_postings):
         num_of_blocks = k
 
 
+    # put the all posting in the dictionary and dump to a 'temporary final' file
     shutil.copyfile('temp_posting_' + str(i+1) + '_' + str(k-1) + '.txt', 'posting_no_skip_pointer.txt')
     temp_dictionary_file = open('temp_dictionary_' + str(i+1) + '_' + str(k-1) + '.txt', 'rb')
     final_dictionary_file_no_skip_pointer = open('dictionary_no_skip_pointer.txt', 'wb')
     dictionary = pickle.load(temp_dictionary_file)
-    dictionary['ALL POSTING'] = filename_list
     pickle.dump(dictionary, final_dictionary_file_no_skip_pointer)
     temp_dictionary_file.close()
     final_dictionary_file_no_skip_pointer.close()
     os.remove('temp_posting_' + str(i+1) + '_' + str(k-1) + '.txt')
     os.remove('temp_dictionary_' + str(i+1) + '_' + str(k-1) + '.txt')
 
-    # adding skip pointers
+    # adding skip pointers, load then dump the dictionary and postings
     dictionary_file = open('dictionary_no_skip_pointer.txt', 'rb')
     posting_file = open('posting_no_skip_pointer.txt', 'rb')
     final_posting_file = open(out_postings, 'wb')
     final_dictionary_file = open(out_dict, 'wb')
+    # the following two lines are just for clarity purposes only
+    final_posting_file.truncate(0)
+    final_dictionary_file.truncate(0)
     dictionary = pickle.load(dictionary_file)
     for word, tuple in dictionary.items():
-        if type(tuple) == type(()):
-            pointer = tuple[1]
-            posting_file.seek(pointer)
-            posting_list = pickle.load(posting_file)
-            new_pointer = final_posting_file.tell()
-            pickle.dump(make_pointer(posting_list), final_posting_file)
-            dictionary[word] = (dictionary[word][0], new_pointer)
+        pointer = tuple[1]
+        posting_file.seek(pointer)
+        posting_list = pickle.load(posting_file)
+        new_pointer = final_posting_file.tell()
+        pickle.dump(make_pointer(posting_list), final_posting_file)
+        dictionary[word] = (dictionary[word][0], new_pointer)
+    dictionary['ALL POSTING'] = make_pointer(filename_list)     # add to have the full posting list
     pickle.dump(dictionary, final_dictionary_file)
 
     dictionary_file.close()

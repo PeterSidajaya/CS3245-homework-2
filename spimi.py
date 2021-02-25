@@ -2,6 +2,13 @@ import pickle
 import os
 
 def invert(word_list, dictionary_file, posting_file):
+    """invert a word stream to dictionary and posting files
+
+    Args:
+        word_list (list): word stream
+        dictionary_file (str): address of the dictionary file
+        posting_file (str): address of the posting file
+    """
     dictionary = {}
     for word, posting in word_list:
         if word not in dictionary:
@@ -13,6 +20,7 @@ def invert(word_list, dictionary_file, posting_file):
             posting_list.append(posting)
     dictionary_file = open(dictionary_file, 'wb')
     posting_file = open(posting_file, 'wb')
+    # these two lines are for clarity purposes only
     dictionary_file.truncate(0)
     posting_file.truncate(0)
     for word, posting_list in dictionary.items():
@@ -24,6 +32,16 @@ def invert(word_list, dictionary_file, posting_file):
 
 def merge_files(dictionary_file_1_address, posting_file_1_address, dictionary_file_2_address, posting_file_2_address,
  output_dictionary_address, output_posting_address):
+    """merge two pairs of dictionary and posting files
+
+    Args:
+        dictionary_file_1_address (str): address of the first dictionary file
+        posting_file_1_address (str): address of the first posting file
+        dictionary_file_2_address (str): address of the second dictionary file
+        posting_file_2_address (str): address of the second posting file
+        output_dictionary_address (str): address of the output dictionary file
+        output_posting_address (str): address of the output posting file
+    """
     infile = open(dictionary_file_1_address,'rb')
     dictionary_1 = pickle.load(infile)
     infile.close()
@@ -64,12 +82,15 @@ def merge_files(dictionary_file_1_address, posting_file_1_address, dictionary_fi
             dictionary[word] = (len(posting_list), pointer)
     
     pickle.dump(dictionary, dictionary_file)
+    # remove the old files
     os.remove(dictionary_file_1_address)
     os.remove(dictionary_file_2_address)
     os.remove(posting_file_1_address)
     os.remove(posting_file_2_address)
 
 def merge_lists(list_1, list_2):
+    """merge two lists into one
+    """
     i = 0
     j = 0
     list = []
