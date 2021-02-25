@@ -43,6 +43,7 @@ def build_index(in_dir, out_dict, out_postings):
         word_list = word_list + list(map(lambda x: (stemmer.stem(x), int(filename)), nltk.tokenize.word_tokenize(document.read())))
         document.close()
         files_in_block += 1
+        # If the number of files scanned has reach block size, then invert first
         if files_in_block == block_size:
             print('Inverting block number ' + str(num_of_blocks + 1))
             invert(word_list, 'temp_dictionary_0_' + str(num_of_blocks) + '.txt', 'temp_posting_0_' + str(num_of_blocks) + '.txt')
@@ -83,7 +84,6 @@ def build_index(in_dir, out_dict, out_postings):
     temp_dictionary_file = open('temp_dictionary_' + str(i+1) + '_' + str(k-1) + '.txt', 'rb')
     final_dictionary_file_no_skip_pointer = open('dictionary_no_skip_pointer.txt', 'wb')
     dictionary = pickle.load(temp_dictionary_file)
-    dictionary['ALL POSTING'] = filename_list
     pickle.dump(dictionary, final_dictionary_file_no_skip_pointer)
     temp_dictionary_file.close()
     final_dictionary_file_no_skip_pointer.close()
@@ -100,13 +100,13 @@ def build_index(in_dir, out_dict, out_postings):
     final_dictionary_file.truncate(0)
     dictionary = pickle.load(dictionary_file)
     for word, tuple in dictionary.items():
-        if type(tuple) == type(()):     # to avoid dictionary['ALL POSTING'], not good but it'll work
-            pointer = tuple[1]
-            posting_file.seek(pointer)
-            posting_list = pickle.load(posting_file)
-            new_pointer = final_posting_file.tell()
-            pickle.dump(make_pointer(posting_list), final_posting_file)
-            dictionary[word] = (dictionary[word][0], new_pointer)
+        pointer = tuple[1]
+        posting_file.seek(pointer)
+        posting_list = pickle.load(posting_file)
+        new_pointer = final_posting_file.tell()
+        pickle.dump(make_pointer(posting_list), final_posting_file)
+        dictionary[word] = (dictionary[word][0], new_pointer)
+    dictionary['ALL POSTING'] = make_pointer(filename_list)     # add to have the full posting list
     pickle.dump(dictionary, final_dictionary_file)
 
     dictionary_file.close()
