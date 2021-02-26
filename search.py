@@ -25,9 +25,14 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     query_list = in_file.read().splitlines()
     while query_list:
         query = query_list.pop(0)
-        out_file.write(search(query, new_dict, postings_file))
+        if (not query):
+            out_file.write("")
+        else:
+            out_file.write(search(query, new_dict, postings_file))
+        
         if query_list:
             out_file.write('\n')
+
     in_file.close()
     out_file.close()
         
