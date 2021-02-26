@@ -9,6 +9,7 @@ def has_skip(pointer, jump, total_length):
 
 
 # function that convert list to pointer_list
+# pointer_list is in the form of list of tuples where the tuples contain (docID, has_skip_pointer, skip_pointer_location)
 # 
 # example: [1,5,8,9,10,13,15]
 # left/right : [(1, True, 2), (5, False, None), (8, True, 4), (9, False, None),

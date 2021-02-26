@@ -7,7 +7,8 @@ import pickle
 import math
 
 def query_shunting(query):
-    """process the query using the shunting-yard algorithm
+    """
+    Process the query using the shunting-yard algorithm
 
     Args:
         query (string): the query to be processed
@@ -20,6 +21,7 @@ def query_shunting(query):
     brackets = {'(', ')'}
     output_queue, operator_stack = deque([]), deque([])
     query = deque(query.split())
+    
     while query:
         token = query.popleft()
 
@@ -30,11 +32,7 @@ def query_shunting(query):
         elif token != ')' and token[-1] == ')':
             query.appendleft(')')
             token = token[:-1]
-        
-        # print()
-        # print("TOKEN:", token, "QUERY:", query)
-        # print("OUT:", output_queue, "OPER:", operator_stack)
-        # print()
+
         # shunting-yard algortihm, see wikipedia for full (note that NOT is right-associative unary operator)
         if (token not in operators) and (token not in brackets):
             output_queue.append(stemmer.stem(token))
@@ -51,8 +49,10 @@ def query_shunting(query):
                 output_queue.append(operator_stack.popleft())
             if (operator_stack[0] == '('):
                 operator_stack.popleft()
+    
     while (len(operator_stack) != 0):
         output_queue.append(operator_stack.popleft())
+    
     return output_queue
 
 
@@ -62,7 +62,8 @@ def precedence(op1, op2):
 
 
 def get_intersection(left, right):
-    """get the intersection between two posting lists, with the help of skip pointers
+    """
+    Get the intersection between two posting lists, with the help of skip pointers
 
     Args:
         left (list): the first list
@@ -71,38 +72,49 @@ def get_intersection(left, right):
     Returns:
         list: intersection of the lists
     """
-    # left/right : [(1, True, 2), (5, False, None), (8, True, 4), (9, False, None),
-    #               (10, True, 6), (13, False, None), (15, False, None)]
 
+    # left/right value example: [(1, True, 2), (5, False, None), (8, True, 4), (9, False, None),
+    #                            (10, True, 6), (13, False, None), (15, False, None)]
+    #
+    # left/right tuple identity: (docID, has_skip_pointer, skip_pointer_location)
+    def get_doc_id(postings_list, curr_pointer):
+        return postings_list[curr_pointer][0]
+
+    def has_next_pointer(postings_list, curr_pointer):
+        return postings_list[curr_pointer][1]
+
+    def get_next_pointer(postings_list, curr_pointer):
+        return postings_list[curr_pointer][2]
+
+    
     left_pointer = 0
     right_pointer = 0
 
     result = []
 
     while (left_pointer < len(left) and right_pointer < len(right)):
-        # print("===============")
-        # print("LEFT_POINT:", left_pointer, "\nLEFT:", left)
-        # print("RIGHT_POINT:", right_pointer, "\nRIGHT:", right)
-        # print("===============")
-        if (left[left_pointer][0] == right[right_pointer][0]):
-            result.append(left[left_pointer][0])
+        left_docID = get_doc_id(left, left_pointer) 
+        right_docID = get_doc_id(right, right_pointer) 
+
+        if (left_docID == right_docID):
+            result.append(left_docID)
             left_pointer += 1
             right_pointer += 1
-        elif (left[left_pointer][0] < right[right_pointer][0]):
-            if (left[left_pointer][1] and
-                left[left[left_pointer][2]][0] <= right[right_pointer][0]):
-                while (left[left_pointer][1] and
-                       left[left[left_pointer][2]][0] <= right[right_pointer][0]):
-                    left_pointer = left[left_pointer][2]
+        elif (left_docID < right_docID):
+            if (has_next_pointer(left, left_pointer) and
+                get_doc_id(left, get_next_pointer(left, left_pointer)) <= get_doc_id(right, right_pointer)):
+                while (has_next_pointer(left, left_pointer) and
+                       get_doc_id(left, get_next_pointer(left, left_pointer)) <= get_doc_id(right, right_pointer)):
+                    left_pointer = get_next_pointer(left, left_pointer)
+                
                 continue
-
             left_pointer += 1
         else:
-            if (right[right_pointer][1] and
-                right[right[right_pointer][2]][0] <= left[left_pointer][0]):
-                while (right[right_pointer][1] and
-                       right[right[right_pointer][2]][0] <= left[left_pointer][0]):
-                    right_pointer = right[right_pointer][2]
+            if (has_next_pointer(right, right_pointer) and
+                get_doc_id(right, get_next_pointer(right, right_pointer)) <= get_doc_id(left, left_pointer)):
+                while (has_next_pointer(right, right_pointer) and
+                       get_doc_id(right, get_next_pointer(right, right_pointer)) <= get_doc_id(left, left_pointer)):
+                    right_pointer = get_next_pointer(right, right_pointer)
                 continue
 
             right_pointer += 1
@@ -121,7 +133,7 @@ def get_union(left, right):
     """
     left_val = [i for i, j, k in left]
     right_val = [i for i, j, k in right]
-    final_list = merge_lists(left_val, right_val)       # steal from spimi.py lol
+    final_list = merge_lists(left_val, right_val)
     return make_pointer(final_list)
 
 
@@ -139,18 +151,18 @@ def get_complement(left, right):
     right_val = [i for i, j, k in right]
     i = 0
     j = 0
-    list = []
+    tmp_list = []
     while i < len(left_val) and j < len(right_val):
         if(left_val[i] < right_val[j]):
-            list.append(left_val[i])
+            tmp_list.append(left_val[i])
             i += 1
         elif(left_val[i] > right_val[j]):
-            j+= 1
+            j += 1
         elif(left_val[i] == right_val[j]):
             i += 1
             j += 1
-    list.extend(left_val[i:])
-    return make_pointer(list)
+    tmp_list.extend(left_val[i:])
+    return make_pointer(tmp_list)
 
 
 def search(query, dictionary, postings_file):
@@ -196,7 +208,6 @@ def search(query, dictionary, postings_file):
 
     if len(eval_stack[0]) != 0:
         get_val = sorted([i for i, j, k in eval_stack[0]])
-        print("RESULT:", get_val)
         return " ".join([str(i) for i in get_val])
     else:
-        return ''
+        return ""
