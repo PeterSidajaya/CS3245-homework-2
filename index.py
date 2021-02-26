@@ -57,7 +57,7 @@ def build_index(in_dir, out_dict, out_postings):
     # {2} indicates the num of blocks
     for filename in filename_list:
         document = open(in_dir + str(filename), 'r', encoding="utf8")
-        word_list += list(map(lambda x: (stemmer.stem(x), int(filename)), nltk.tokenize.word_tokenize(document.read())))
+        word_list += list(map(lambda x: (stemmer.stem(x).lower(), int(filename)), nltk.tokenize.word_tokenize(document.read())))
         document.close()
         files_in_block += 1
 
