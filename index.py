@@ -96,7 +96,7 @@ def build_index(in_dir, out_dict, out_postings):
         num_of_blocks = k
 
     try:
-        # put the all posting in the dictionary and dump to a 'temporary final' file
+        # rename the merged posting and dictionary files, for clarity
         shutil.move(POSTING_DIR + 'temp_posting_' + str(i+1) + '_' + str(k-1) + '.txt', POSTING_DIR + 'posting_no_skip_pointer.txt')
         shutil.move(POSTING_DIR + 'temp_dictionary_' + str(i+1) + '_' + str(k-1) + '.txt', POSTING_DIR + 'dictionary_no_skip_pointer.txt')
     except Exception as ex:
