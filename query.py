@@ -35,7 +35,7 @@ def query_shunting(query):
 
         # shunting-yard algortihm, see wikipedia for full (note that NOT is right-associative unary operator)
         if (token not in operators) and (token not in brackets):
-            output_queue.append(stemmer.stem(token))
+            output_queue.append(stemmer.stem(token).lower())
         elif token in operators:
             while ((len(operator_stack) != 0) and
                 (precedence(operator_stack[0], token)) and
