@@ -23,7 +23,7 @@ def build_index(in_dir, out_dict, out_postings):
     """
 
     # constants
-    BLOCK_SIZE = 2                              # change this to set block size
+    BLOCK_SIZE = 1000                           # change this to set block size
     POSTING_DIR = "temp_postings_result_dir/"   # all intermediate postings file will be added here (spimi)
 
     if not os.path.exists(POSTING_DIR):
@@ -57,7 +57,10 @@ def build_index(in_dir, out_dict, out_postings):
     # {2} indicates the num of blocks
     for filename in filename_list:
         document = open(in_dir + str(filename), 'r', encoding="utf8")
-        word_list += list(map(lambda x: (stemmer.stem(x).lower(), int(filename)), nltk.tokenize.word_tokenize(document.read())))
+        document_text = document.read().split("\n")
+        document_list = [nltk.tokenize.word_tokenize(text) for text in document_text]
+        flattened_list = [text for ls in document_list for text in ls]
+        word_list += list(map(lambda x: (stemmer.stem(x).lower(), int(filename)), flattened_list))
         document.close()
         files_in_block += 1
 
