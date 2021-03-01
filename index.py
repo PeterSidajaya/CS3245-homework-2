@@ -129,7 +129,7 @@ def build_index(in_dir, out_dict, out_postings):
     dictionary['ALL POSTING'] = make_pointer(filename_list)     # add to have the full posting list
     pickle.dump(dictionary, final_dictionary_file)
 
-    shutil.rmtree(POSTING_DIR)
+    shutil.rmtree(POSTING_DIR, ignore_errors=True)
     dictionary_file.close()
     posting_file.close()
     final_dictionary_file.close()
