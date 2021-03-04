@@ -43,6 +43,7 @@ index.py  : main file for indexing
 search.py : main file for searching
 spimi.py  : file containing helper functions, mostly for index.py
 query.py  : file containing helper functions, mostly for search.py
+config.py : file containing even additional helper functions, mostly for skip pointers.
 
 == Statement of individual work ==
 
