@@ -35,6 +35,7 @@ REMARKS
 
 We assume the query to be sensical, e.g., no "AND NOT AND OR NOT".
 Operators are case-sensitive ("NOT NOT and OR or" would still work).
+github: https://github.com/PeterSidajaya/CS3245-homework-2
 
 == Files included with this submission ==
 
